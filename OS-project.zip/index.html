@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>FCFS Scheduler</title>
+<style>
+    body {
+        font-family: Arial;
+        max-width: 700px;
+        margin: 30px auto;
+    }
+    input[type="number"] {
+        width: 80px;
+        padding: 5px;
+        margin: 3px;
+    }
+    table {
+        border-collapse: collapse;
+        margin-top: 20px;
+        width: 100%;
+    }
+    th, td {
+        border: 1px solid #333;
+        padding: 8px;
+        text-align: center;
+    }
+    .gantt {
+        font-family: monospace;
+        white-space: pre;
+        background: #f4f4f4;
+        padding: 10px;
+        border: 1px solid #ddd;
+        margin-top: 20px;
+    }
+</style>
+</head>
+
+<body>
+
+<h2>FCFS Scheduling Simulator</h2>
+
+<label>Number of processes:</label>
+<input type="number" id="num" min="1">
+<button onclick="createInputs()">Create</button>
+
+<div id="inputArea"></div>
+
+<button onclick="runFCFS()" style="margin-top:15px;">Run FCFS</button>
+
+<div id="output"></div>
+
+<script>
+
+// STEP 1: Create input fields for each process
+function createInputs() {
+    let n = document.getElementById('num').value;
+    if (n <= 0) return;
+
+    let html = "<h3>Enter arrival & burst times:</h3>";
+    html += "<table><tr><th>P#</th><th>Arrival</th><th>Burst</th></tr>";
+
+    for (let i = 1; i <= n; i++) {
+        html += `
+            <tr>
+                <td>P${i}</td>
+                <td><input type="number" id="arr${i}" min="0"></td>
+                <td><input type="number" id="bur${i}" min="1"></td>
+            </tr>`;
+    }
+
+    html += "</table>";
+
+    document.getElementById('inputArea').innerHTML = html;
+}
+
+// STEP 2: Run FCFS (JS version of your C code)
+function runFCFS() {
+    let n = parseInt(document.getElementById("num").value);
+    let p = [];
+
+    // Read user input
+    for (let i = 1; i <= n; i++) {
+        p.push({
+            id: i,
+            arrival: parseInt(document.getElementById("arr" + i).value),
+            burst: parseInt(document.getElementById("bur" + i).value),
+            start: 0,
+            completion: 0,
+            waiting: 0,
+            turnaround: 0
+        });
+    }
+
+    // Sort by arrival (same as C code)
+    p.sort((a, b) => a.arrival - b.arrival);
+
+    let time = 0;
+    let totalW = 0;
+    let totalT = 0;
+
+    // FCFS Logic
+    for (let i = 0; i < n; i++) {
+        if (time < p[i].arrival) time = p[i].arrival;
+
+        p[i].start = time;
+        p[i].completion = time + p[i].burst;
+        p[i].waiting = p[i].start - p[i].arrival;
+        p[i].turnaround = p[i].completion - p[i].arrival;
+
+        totalW += p[i].waiting;
+        totalT += p[i].turnaround;
+
+        time = p[i].completion;
+    }
+
+    // STEP 3: Create table output
+    let out = "<h3>FCFS Results</h3>";
+    out += "<table><tr><th>P#</th><th>Arrival</th><th>Burst</th><th>Start</th><th>Completion</th><th>Waiting</th><th>Turnaround</th></tr>";
+
+    p.forEach(pr => {
+        out += `<tr>
+            <td>${pr.id}</td>
+            <td>${pr.arrival}</td>
+            <td>${pr.burst}</td>
+            <td>${pr.start}</td>
+            <td>${pr.completion}</td>
+            <td>${pr.waiting}</td>
+            <td>${pr.turnaround}</td>
+        </tr>`;
+    });
+
+    out += "</table>";
+
+    out += `<p><b>Average Waiting Time:</b> ${(totalW / n).toFixed(2)}</p>`;
+    out += `<p><b>Average Turnaround Time:</b> ${(totalT / n).toFixed(2)}</p>`;
+
+    // STEP 4: Gantt Chart (same style as C)
+    let top = "";
+    let mid = "";
+    let bottom = "";
+    let times = "";
+
+    // top bar
+    p.forEach(pr => {
+        top += "+";
+        for (let i = 0; i < pr.burst * 2; i++) top += "-";
+    });
+    top += "+\n";
+
+    // middle with labels
+    p.forEach(pr => {
+        let width = pr.burst * 2;
+        let left = Math.floor((width - 2) / 2);
+        mid += "|";
+        mid += " ".repeat(left) + "P" + pr.id + " ".repeat(width - 2 - left);
+    });
+    mid += "|\n";
+
+    // bottom bar
+    p.forEach(pr => {
+        bottom += "+";
+        for (let i = 0; i < pr.burst * 2; i++) bottom += "-";
+    });
+    bottom += "+\n";
+
+    // time labels
+    times += p[0].start;
+    p.forEach(pr => {
+        times += " ".repeat(pr.burst * 2) + pr.completion;
+    });
+
+    out += `<div class="gantt">${top}${mid}${bottom}${times}</div>`;
+
+    document.getElementById("output").innerHTML = out;
+}
+
+</script>
+
+</body>
+</html>
